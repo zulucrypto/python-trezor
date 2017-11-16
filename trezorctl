@@ -35,6 +35,7 @@ from trezorlib import protobuf
 from trezorlib.coins import coins_txapi
 from trezorlib.ckd_public import PRIME_DERIVATION_FLAG
 
+import trezorlib.stellar as stellar
 
 class ChoiceType(click.Choice):
     def __init__(self, typemap):
@@ -839,6 +840,20 @@ def cosi_sign(connect, address, data, global_commitment, global_pubkey):
     address_n = client.expand_path(address)
     return client.cosi_sign(address_n, binascii.unhexlify(data), binascii.unhexlify(global_commitment), binascii.unhexlify(global_pubkey))
 
+
+#
+# Stellar functions
+#
+@cli.command(help='Get Stellar public address')
+@click.option('-a', '--account', required=False, help="Account number (1 is the default primary account corresponding to m/44'/148'/0')")
+@click.pass_obj
+def stellar_get_address(connect, account):
+    index = stellar.get_index_from_account_number(account)
+
+    client = connect()
+    # StellarPublicKey response
+    response = client.stellar_get_public_key(index)
+    return stellar.get_public_key_from_bytes(response.public_key)
 
 #
 # Main

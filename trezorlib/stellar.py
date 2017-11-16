@@ -1,5 +1,21 @@
 import base64
 import struct
+import binascii
+
+def get_index_from_account_number(account):
+    """Returns an integer index or the default of 0"""
+    max_account_index = pow(2, 31) - 1
+
+    if account is None:
+        index = 0
+    else:
+        index = int(account) - 1
+
+    if index < 0 or index > max_account_index:
+        raise ValueError("Error: invalid account number (must be between 1 and " + str(max_account_index) + ")")
+
+    return index
+
 
 def get_public_key_from_bytes(pk_bytes):
     """Returns the base32-encoded version of pk_bytes (G...)
@@ -25,10 +41,7 @@ def _crc16_checksum(bytes):
     crc = 0x0000
     polynomial = 0x1021
 
-    count = 0
     for byte in bytes:
-        count = count + 1
-
         for i in range(0, 8):
             bit = ((byte >> (7 - i) & 1) == 1)
             c15 = ((crc >> 15 & 1) == 1)
