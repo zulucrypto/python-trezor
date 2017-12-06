@@ -28,6 +28,7 @@ import unicodedata
 import json
 import getpass
 import warnings
+import base64
 
 from mnemonic import Mnemonic
 
@@ -803,6 +804,35 @@ class ProtocolMixin(object):
             raise CallException("Unknown transaction type")
 
         return self.call(msg)
+
+    def stellar_sign_transaction(self, txEnvelope, index, networkPassphrase=None):
+        # default networkPassphrase to the public network
+        if networkPassphrase is None:
+            networkPassphrase = "Public Global Stellar Network ; September 2015"
+
+        # Limit txEnvelope to 1024 bytes (max supported, see messages.options in trezor-mcu)
+        if len(txEnvelope) > 1024:
+            txEnvelope = txEnvelope[:1024]
+
+        # Will get a StellarTxOpRequest back
+        resp = self.call(proto.StellarSignTx(index=index, network_passphrase=networkPassphrase, header_xdr=txEnvelope))
+
+        # exit when we get a StellarSignedTx
+        while True:
+            xdr_chunk = txEnvelope[resp.offset:]
+            # limit to 1024 bytes
+            xdr_chunk = xdr_chunk[:1024]
+
+            # Will get a StellarTxOpRequest or a StellarSignedTx back
+            resp = self.call(proto.StellarTxOpAck(xdr=xdr_chunk))
+
+            # We'll get a StellarSignedTx after submitting the last operation
+            if resp.__class__.__name__ == "StellarSignedTx":
+                break
+
+        # return the signature as a base64-encoded string
+        return base64.b64encode(resp.signature)
+
 
     @expect(proto.StellarPublicKey)
     def stellar_get_public_key(self, index):

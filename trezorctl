@@ -855,6 +855,18 @@ def stellar_get_address(connect, account):
     response = client.stellar_get_public_key(index)
     return stellar.get_public_key_from_bytes(response.public_key)
 
+@cli.command(help='Sign a base64-encoded transaction envelope')
+@click.option('-a', '--account', required=False, help="Account number (1 is the default primary account corresponding to m/44'/148'/0')")
+@click.option('-n', '--network-passphrase', required=False, help="Network passphrase (blank for public network). Testnet is: 'Test SDF Network ; September 2015'")
+@click.argument('b64envelope')
+@click.pass_obj
+def stellar_sign_transaction(connect, b64envelope, account, network_passphrase):
+    index = stellar.get_index_from_account_number(account)
+
+    client = connect()
+    # raw signature bytes
+    return client.stellar_sign_transaction(base64.b64decode(b64envelope), index, network_passphrase)
+
 #
 # Main
 #
