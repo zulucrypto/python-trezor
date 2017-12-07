@@ -17,7 +17,7 @@ def get_index_from_account_number(account):
     return index
 
 
-def get_public_key_from_bytes(pk_bytes):
+def address_from_public_key(pk_bytes):
     """Returns the base32-encoded version of pk_bytes (G...)
     """
     final_bytes = bytearray()
