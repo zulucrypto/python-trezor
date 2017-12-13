@@ -865,7 +865,9 @@ def stellar_sign_transaction(connect, b64envelope, account, network_passphrase):
 
     client = connect()
     # raw signature bytes
-    return client.stellar_sign_transaction(base64.b64decode(b64envelope), index, network_passphrase)
+    resp = client.stellar_sign_transaction(base64.b64decode(b64envelope), index, network_passphrase)
+
+    return base64.b64encode(resp.signature)
 
 #
 # Main

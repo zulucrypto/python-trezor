@@ -28,7 +28,6 @@ import unicodedata
 import json
 import getpass
 import warnings
-import base64
 
 from mnemonic import Mnemonic
 
@@ -37,6 +36,7 @@ from . import tools
 from . import mapping
 from .coins import coins_slip44
 from .debuglink import DebugLink
+from . import stellar as stellar
 
 # Python2 vs Python3
 try:
@@ -810,28 +810,57 @@ class ProtocolMixin(object):
         if networkPassphrase is None:
             networkPassphrase = "Public Global Stellar Network ; September 2015"
 
-        # Limit txEnvelope to 1024 bytes (max supported, see messages.options in trezor-mcu)
-        if len(txEnvelope) > 1024:
-            txEnvelope = txEnvelope[:1024]
+        parsed = stellar.parse_transaction_bytes(txEnvelope, networkPassphrase, index)
 
-        # Will get a StellarTxOpRequest back
-        resp = self.call(proto.StellarSignTx(index=index, network_passphrase=networkPassphrase, header_xdr=txEnvelope))
+        print(parsed)
 
-        # exit when we get a StellarSignedTx
-        while True:
-            xdr_chunk = txEnvelope[resp.offset:]
-            # limit to 1024 bytes
-            xdr_chunk = xdr_chunk[:1024]
+        # Will return a StellarTxOpRequest
+        resp = self.call(proto.StellarSignTx(
+            protocol_version=parsed["protocol_version"],
+            index=index,
+            network_passphrase=networkPassphrase,
+            source_account=parsed["source_account"],
+            fee=parsed["fee"],
+            sequence_number=parsed["sequence_number"],
+            timebounds_start=parsed["timebounds_start"],
+            timebounds_end=parsed["timebounds_end"],
+            memo_type=parsed["memo_type"],
+            memo_text=parsed["memo_text"],
+            memo_id=parsed["memo_id"],
+            memo_hash=parsed["memo_hash"],
+            num_operations=parsed["num_operations"]
+        ))
+        if resp.__class__.__name__ != "StellarTxOpRequest":
+            raise CallException("Unexpected response to transaction")
 
-            # Will get a StellarTxOpRequest or a StellarSignedTx back
-            resp = self.call(proto.StellarTxOpAck(xdr=xdr_chunk))
+        for opIdx in range(0, parsed["num_operations"]):
+            op = parsed["operations"][opIdx]
+            resp = None
 
-            # We'll get a StellarSignedTx after submitting the last operation
+            # Create account
+            if op["type"] == 0:
+                resp = self.call(proto.StellarTxOpAck(
+                    type=op["type"],
+                    source_account=op["source_account"],
+                    destination_account=op["destination_account"],
+                    amount=op["amount"]
+                ))
+            # Payment
+            if op["type"] == 1:
+                asset = types.StellarAssetType(type=op["asset"]["type"], code=op["asset"]["code"], issuer=op["asset"]["issuer"])
+                resp = self.call(proto.StellarTxOpAck(
+                    type=op["type"],
+                    source_account=op["source_account"],
+                    destination_account=op["destination_account"],
+                    amount=op["amount"],
+                    asset=asset
+                ))
+
+            # Exit if the response was a StellarSignedTx
             if resp.__class__.__name__ == "StellarSignedTx":
-                break
+                return resp
 
-        # return the signature as a base64-encoded string
-        return base64.b64encode(resp.signature)
+        raise CallException("Reached end of operations without a signature")
 
 
     @expect(proto.StellarPublicKey)
