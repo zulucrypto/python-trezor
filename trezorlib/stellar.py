@@ -99,13 +99,132 @@ def _parse_operation_bytes(unpacker):
 
     # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L16
     if op["type"] == 0:
-        op["destination_account"] = _xdr_read_address(unpacker)
-        op["amount"] = unpacker.unpack_hyper()
+        op["new_account"] = _xdr_read_address(unpacker)
+        op["starting_balance"] = unpacker.unpack_hyper()
 
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L54
     if op["type"] == 1:
         op["destination_account"] = _xdr_read_address(unpacker)
         op["asset"] = _xdr_read_asset(unpacker)
-        op["amount"] = unpacker.unpack_uhyper()
+        op["amount"] = unpacker.unpack_hyper()
+
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L72
+    if op["type"] == 2:
+        op["send_asset"] = _xdr_read_asset(unpacker)
+        op["send_max"] = unpacker.unpack_hyper()
+        op["destination_account"] = _xdr_read_address(unpacker)
+        op["destination_asset"] = _xdr_read_asset(unpacker)
+        op["destination_amount"] = unpacker.unpack_hyper()
+        op["paths"] = []
+
+        num_paths = unpacker.unpack_uint()
+        for i in range(0, num_paths):
+            op["paths"].append(_xdr_read_asset(unpacker))
+
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L93
+    if op["type"] == 3:
+        op["selling_asset"] = _xdr_read_asset(unpacker)
+        op["buying_asset"] = _xdr_read_asset(unpacker)
+        op["amount"] = unpacker.unpack_hyper()
+        op["price_n"] = unpacker.unpack_uint()
+        op["price_d"] = unpacker.unpack_uint()
+        op["offer_id"] = unpacker.unpack_uhyper()
+
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L111
+    if op["type"] == 4:
+        op["selling_asset"] = _xdr_read_asset(unpacker)
+        op["buying_asset"] = _xdr_read_asset(unpacker)
+        op["amount"] = unpacker.unpack_hyper()
+        op["price_n"] = unpacker.unpack_uint()
+        op["price_d"] = unpacker.unpack_uint()
+
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L129
+    if op["type"] == 5:
+        op["inflation_destination"] = None
+        op["clear_flags"] = None
+        op["set_flags"] = None
+        op["master_weight"] = None
+        op["low_threshold"] = None
+        op["medium_threshold"] = None
+        op["high_threshold"] = None
+        op["home_domain"] = None
+        op["signer_type"] = None
+        op["signer_key"] = None
+        op["signer_weight"] = None
+
+        op["has_inflation_destination"] = unpacker.unpack_bool()
+        if op["has_inflation_destination"]:
+            op["inflation_destination"] = _xdr_read_address(unpacker)
+
+        op["has_clear_flags"] = unpacker.unpack_bool()
+        if op["has_clear_flags"]:
+            op["clear_flags"] = unpacker.unpack_uint()
+
+        op["has_set_flags"] = unpacker.unpack_bool()
+        if op["has_set_flags"]:
+            op["set_flags"] = unpacker.unpack_uint()
+
+        op["has_master_weight"] = unpacker.unpack_bool()
+        if op["has_master_weight"]:
+            op["master_weight"] = unpacker.unpack_uint()
+
+        op["has_low_threshold"] = unpacker.unpack_bool()
+        if op["has_low_threshold"]:
+            op["low_threshold"] = unpacker.unpack_uint()
+
+        op["has_medium_threshold"] = unpacker.unpack_bool()
+        if op["has_medium_threshold"]:
+            op["medium_threshold"] = unpacker.unpack_uint()
+
+        op["has_high_threshold"] = unpacker.unpack_bool()
+        if op["has_high_threshold"]:
+            op["high_threshold"] = unpacker.unpack_uint()
+
+        op["has_home_domain"] = unpacker.unpack_bool()
+        if op["has_home_domain"]:
+            op["home_domain"] = unpacker.unpack_string()
+
+        op["has_signer"] = unpacker.unpack_bool()
+        if op["has_signer"]:
+            op["signer_type"] = unpacker.unpack_uint()
+            op["signer_key"] = unpacker.unpack_fopaque(32)
+            op["signer_weight"] = unpacker.unpack_uint()
+
+    # Change Trust
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L156
+    if op["type"] == 6:
+        op["asset"] = _xdr_read_asset(unpacker)
+        op["limit"] = unpacker.unpack_uhyper()
+
+    # Allow Trust
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L173
+    if op["type"] == 7:
+        op["trusted_account"] = _xdr_read_address(unpacker)
+        op["asset_type"] = unpacker.unpack_uint()
+
+        if op["asset_type"] == 1:
+            op["asset_code"] = unpacker.unpack_fstring(4)
+        if op["asset_type"] == 2:
+            op["asset_code"] = unpacker.unpack_fstring(12)
+
+        op["is_authorized"] = unpacker.unpack_bool()
+
+    # Merge Account
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L251
+    if op["type"] == 8:
+        op["destination_account"] = _xdr_read_address(unpacker)
+
+    # Inflation is not implemented since any account can send this operation
+
+    # Manage Data
+    # see: https://github.com/stellar/stellar-core/blob/master/src/xdr/Stellar-transaction.x#L218
+    if op["type"] == 10:
+        op["key"] = unpacker.unpack_string()
+
+        op["value"] = None
+        op["has_value"] = unpacker.unpack_bool()
+        if op["has_value"]:
+            op["value"] = unpacker.unpack_opaque()
 
     return op
 
