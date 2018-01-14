@@ -855,6 +855,40 @@ def stellar_get_address(connect, account):
     response = client.stellar_get_public_key(index)
     return stellar.address_from_public_key(response.public_key)
 
+@cli.command(help='Sign a string with a Stellar key')
+@click.option('-a', '--account', required=False, help="Account number (1 is the default primary account corresponding to m/44'/148'/0')")
+@click.argument('message')
+@click.pass_obj
+def stellar_sign_message(connect, account, message):
+    index = stellar.get_index_from_account_number(account)
+
+    client = connect()
+    response = client.stellar_sign_message(index, message)
+    return base64.b64encode(response.signature)
+
+@cli.command(help='Verify that a signature is valid')
+@click.option('--message-is-b64/--no-message-is-b64', default=False, required=False, help="If set, the message argument will be interpreted as a base64-encoded string")
+@click.argument('address')
+@click.argument('signatureb64')
+@click.argument('message')
+@click.pass_obj
+def stellar_verify_message(connect, address, message_is_b64, signatureb64, message):
+    if message_is_b64:
+        message = base64.b64decode(message)
+    else:
+        message = message.encode('utf-8')
+
+    pubkey_bytes = stellar.address_to_public_key(address)
+
+    client = connect()
+    response = client.stellar_verify_message(pubkey_bytes, base64.b64decode(signatureb64), message)
+
+    if response.is_verified:
+        return "Success: message verified"
+    else:
+        print "ERROR: invalid signature, verification failed"
+        sys.exit(1)
+
 @cli.command(help='Sign a base64-encoded transaction envelope')
 @click.option('-a', '--account', required=False, help="Account number (1 is the default primary account corresponding to m/44'/148'/0')")
 @click.option('-n', '--network-passphrase', required=False, help="Network passphrase (blank for public network). Testnet is: 'Test SDF Network ; September 2015'")

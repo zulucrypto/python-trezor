@@ -945,6 +945,14 @@ class ProtocolMixin(object):
     def stellar_get_public_key(self, index):
         return self.call(proto.StellarGetPublicKey(index=index))
 
+    @expect(proto.StellarSignedData)
+    def stellar_sign_message(self, index, message):
+        return self.call(proto.StellarSignString(index=index, message=message))
+
+    @expect(proto.StellarMessageVerification)
+    def stellar_verify_message(self, pubkey_bytes, signature, message):
+        return self.call(proto.StellarVerifyMessage(public_key=pubkey_bytes, message=message, signature=signature))
+
     def verify_message(self, coin_name, address, signature, message):
         # Convert message to UTF8 NFC (seems to be a bitcoin-qt standard)
         message = normalize_nfc(message).encode('utf-8')
