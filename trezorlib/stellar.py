@@ -33,6 +33,17 @@ def address_from_public_key(pk_bytes):
 
     return base64.b32encode(final_bytes)
 
+def address_to_public_key(address_str):
+    """Returns the raw 32 bytes representing a public key by extracting
+    it from the G... string
+    """
+    final_bytes = bytearray()
+    decoded = base64.b32decode(address_str)
+
+    # skip 0th byte (version) and last two bytes (checksum)
+    return decoded[1:-2]
+
+
 def parse_transaction_bytes(bytes, network_passphrase, account_index):
     """Parses base64data into a StellarSignTx message
     """
