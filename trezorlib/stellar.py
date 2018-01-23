@@ -4,19 +4,14 @@ import binascii
 import xdrlib
 import hexdump
 
-def get_index_from_account_number(account):
-    """Returns an integer index or the default of 0"""
-    max_account_index = pow(2, 31) - 1
-
-    if account is None:
-        index = 0
+def expand_path_or_default(client, address):
+    """Uses client to parse address and returns an array of integers
+    If no address is specified, the default of m/44'/148'/0' is used
+    """
+    if address:
+        return client.expand_path(address)
     else:
-        index = int(account) - 1
-
-    if index < 0 or index > max_account_index:
-        raise ValueError("Invalid account number (must be between 1 and " + str(max_account_index) + ")")
-
-    return index
+        return client.expand_path("m/44'/148'/0'")
 
 
 def address_from_public_key(pk_bytes):
@@ -44,7 +39,7 @@ def address_to_public_key(address_str):
     return decoded[1:-2]
 
 
-def parse_transaction_bytes(bytes, network_passphrase, account_index):
+def parse_transaction_bytes(bytes):
     """Parses base64data into a StellarSignTx message
     """
     parsed = {}

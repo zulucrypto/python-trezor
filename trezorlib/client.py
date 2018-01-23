@@ -805,17 +805,17 @@ class ProtocolMixin(object):
 
         return self.call(msg)
 
-    def stellar_sign_transaction(self, txEnvelope, index, networkPassphrase=None):
+    def stellar_sign_transaction(self, txEnvelope, address_n, networkPassphrase=None):
         # default networkPassphrase to the public network
         if networkPassphrase is None:
             networkPassphrase = "Public Global Stellar Network ; September 2015"
 
-        parsed = stellar.parse_transaction_bytes(txEnvelope, networkPassphrase, index)
+        parsed = stellar.parse_transaction_bytes(txEnvelope)
 
         # Will return a StellarTxOpRequest
         resp = self.call(proto.StellarSignTx(
             protocol_version=parsed["protocol_version"],
-            index=index,
+            address_n=address_n,
             network_passphrase=networkPassphrase,
             source_account=parsed["source_account"],
             fee=parsed["fee"],
@@ -940,18 +940,21 @@ class ProtocolMixin(object):
 
         raise CallException("Reached end of operations without a signature")
 
-
     @expect(proto.StellarPublicKey)
-    def stellar_get_public_key(self, index):
-        return self.call(proto.StellarGetPublicKey(index=index))
+    def stellar_get_public_key(self, address_n):
+        return self.call(proto.StellarGetPublicKey(address_n=address_n))
 
-    @expect(proto.StellarSignedData)
-    def stellar_sign_message(self, index, message):
-        return self.call(proto.StellarSignString(index=index, message=message))
+    @expect(proto.StellarMessageSignature)
+    def stellar_sign_message(self, address_n, message):
+        return self.call(proto.StellarSignMessage(address_n=address_n, message=message))
 
-    @expect(proto.StellarMessageVerification)
     def stellar_verify_message(self, pubkey_bytes, signature, message):
-        return self.call(proto.StellarVerifyMessage(public_key=pubkey_bytes, message=message, signature=signature))
+        resp = self.call(proto.StellarVerifyMessage(public_key=pubkey_bytes, message=message, signature=signature))
+
+        if isinstance(resp, proto.Success):
+            return True
+        return False
+
 
     def verify_message(self, coin_name, address, signature, message):
         # Convert message to UTF8 NFC (seems to be a bitcoin-qt standard)
