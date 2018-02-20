@@ -2,7 +2,6 @@ import base64
 import struct
 import binascii
 import xdrlib
-import hexdump
 
 def expand_path_or_default(client, address):
     """Uses client to parse address and returns an array of integers
