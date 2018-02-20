@@ -884,7 +884,7 @@ def stellar_verify_message(connect, address, message_is_b64, signatureb64, messa
     if is_verified:
         return "Success: message verified"
     else:
-        print "ERROR: invalid signature, verification failed"
+        print("ERROR: invalid signature, verification failed")
         sys.exit(1)
 
 @cli.command(help='Sign a base64-encoded transaction envelope')
