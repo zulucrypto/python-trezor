@@ -114,7 +114,7 @@ class TestMsgStellarSignTransaction(TrezorTest):
 
         tx = self._create_msg()
 
-        response = self.client.stellar_sign_transaction(tx, [op], self.get_address_n(),self.get_network_passphrase())
+        response = self.client.stellar_sign_transaction(tx, [op], self.get_address_n(), self.get_network_passphrase())
 
         assert b64encode(response.signature) == b'pDc6ghKCLNoYbt3h4eBw+533237m0BB0Jp/d/TxJCA83mF3o5Fr4l5vwAWBR62hdTWAP9MhVluY0cd5i54UwDg=='
 
@@ -149,7 +149,6 @@ class TestMsgStellarSignTransaction(TrezorTest):
         response = self.client.stellar_sign_transaction(tx, [op], self.get_address_n(), self.get_network_passphrase())
 
         assert b64encode(response.signature) == b'QZIP4XKPfe4OpZtuJiyrMZBX9YBzvGpHGcngdgFfHn2kcdONreF384/pCF80xfEnGm8grKaoOnUEKxqcMKvxAA=='
-
 
     def _create_msg(self) -> proto.StellarSignTx:
         tx = proto.StellarSignTx()
